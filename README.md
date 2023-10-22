@@ -1,16 +1,15 @@
 # jax-scipy-spatial
 
-This package implements scipy spatial API for JAX.
+This package implements `scipy.spatial` API for JAX.
 
 Currently the following functions / classes are implemented:
 
 - `scipy.spatial.transform.Rotation`
 - `scipy.spatial.transform.Slerp`
 
-Note that many of the functions and classes in this module may be quite
-difficult to implement properly in JAX, (e.g. nearest neighbor search). We
-request any submissions to this repo be fully compatible with both `vmap` and
-`grad`.
+Note that much of the code in this module may be too difficult to implement
+properly in JAX, (e.g. nearest neighbor search). We request any submissions to
+this repo be fully compatible with both `vmap` and `grad`.
 
 ## Install
 ```
