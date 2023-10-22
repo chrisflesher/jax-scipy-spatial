@@ -19,9 +19,9 @@ import jax
 
 import scipy.version
 from jax._src import test_util as jtu
-from jax.scipy.spatial.transform import Rotation as jsp_Rotation
+from jax_scipy_spatial.transform import Rotation as jsp_Rotation
 from scipy.spatial.transform import Rotation as osp_Rotation
-from jax.scipy.spatial.transform import Slerp as jsp_Slerp
+from jax_scipy_spatial.transform import Slerp as jsp_Slerp
 from scipy.spatial.transform import Slerp as osp_Slerp
 
 import jax.numpy as jnp
@@ -36,6 +36,7 @@ float_dtypes = jtu.dtypes.floating
 real_dtypes = float_dtypes + jtu.dtypes.integer + jtu.dtypes.boolean
 
 num_samples = 2
+
 
 class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
   """Tests for LAX-backed scipy.spatial implementations."""
@@ -70,7 +71,7 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
     args_maker = lambda: (rng(shape, dtype), rng(vector_shape, dtype),)
     jnp_fn = lambda q, v: jsp_Rotation.from_quat(q).apply(v, inverse=inverse)
     np_fn = lambda q, v: osp_Rotation.from_quat(q).apply(v, inverse=inverse).astype(dtype)  # HACK
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=True, tol=tol)
+    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=True, tol=1e-4)
     self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
 
   @jtu.sample_product(
