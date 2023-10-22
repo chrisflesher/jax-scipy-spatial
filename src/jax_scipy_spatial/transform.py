@@ -26,10 +26,15 @@ from scipy.constants import golden
 
 
 @_wraps(scipy.spatial.transform.Rotation)
-class Rotation(typing.NamedTuple):
+class Rotation:
   """Rotation in 3 dimensions."""
 
-  quat: jax.Array
+  _quat: jax.Array
+
+  def __init__(self, quat: jax.Array):
+    """Initialize."""
+    assert quat.shape[-1] == 4
+    self._quat = quat
 
   @classmethod
   def align_vectors(cls, a: jax.Array, b: jax.Array, weights: typing.Optional[jax.Array] = None, return_sensitivity: bool = False):
@@ -90,7 +95,7 @@ class Rotation(typing.NamedTuple):
   @classmethod
   def concatenate(cls, rotations: typing.Sequence):
     """Concatenate a sequence of `Rotation` objects."""
-    return cls(jnp.concatenate([rotation.quat for rotation in rotations]))
+    return cls(jnp.concatenate([rotation._quat for rotation in rotations]))
 
   @classmethod
   def from_euler(cls, seq: str, angles: jax.Array, degrees: bool = False):
@@ -151,18 +156,18 @@ class Rotation(typing.NamedTuple):
     """Extract rotation(s) at given index(es) from object."""
     if self.single:
       raise TypeError("Single rotation is not subscriptable.")
-    return Rotation(self.quat[indexer])
+    return Rotation(self._quat[indexer])
 
   def __len__(self):
     """Number of rotations contained in this object."""
     if self.single:
       raise TypeError('Single rotation has no len().')
     else:
-      return self.quat.shape[0]
+      return self._quat.shape[0]
 
   def __mul__(self, other):
     """Compose this rotation with the other."""
-    return Rotation.from_quat(_compose_quat(self.quat, other.quat))
+    return Rotation.from_quat(_compose_quat(self._quat, other._quat))
 
   def apply(self, vectors: jax.Array, inverse: bool = False) -> jax.Array:
     """Apply this rotation to one or more vectors."""
@@ -182,35 +187,35 @@ class Rotation(typing.NamedTuple):
       raise ValueError("Expected consecutive axes to be different, "
                        "got {}".format(seq))
     axes = jnp.array([_elementary_basis_index(x) for x in seq.lower()])
-    return _compute_euler_from_quat(self.quat, axes, extrinsic, degrees)
+    return _compute_euler_from_quat(self._quat, axes, extrinsic, degrees)
 
   def as_matrix(self) -> jax.Array:
     """Represent as rotation matrix."""
-    return _as_matrix(self.quat)
+    return _as_matrix(self._quat)
 
   def as_mrp(self) -> jax.Array:
     """Represent as Modified Rodrigues Parameters (MRPs)."""
-    return _as_mrp(self.quat)
+    return _as_mrp(self._quat)
 
   def as_rotvec(self, degrees: bool = False) -> jax.Array:
     """Represent as rotation vectors."""
-    return _as_rotvec(self.quat, degrees)
+    return _as_rotvec(self._quat, degrees)
 
   def as_quat(self) -> jax.Array:
     """Represent as quaternions."""
-    return self.quat
+    return self._quat
 
   def inv(self):
     """Invert this rotation."""
-    return Rotation(_inv(self.quat))
+    return Rotation(_inv(self._quat))
 
   def magnitude(self) -> jax.Array:
     """Get the magnitude(s) of the rotation(s)."""
-    return _magnitude(self.quat)
+    return _magnitude(self._quat)
 
   def mean(self, weights: typing.Optional[jax.Array] = None):
     """Get the mean of the rotations."""
-    weights = jnp.where(weights is None, jnp.ones(self.quat.shape[0], dtype=self.quat.dtype), jnp.asarray(weights, dtype=self.quat.dtype))
+    weights = jnp.where(weights is None, jnp.ones(self._quat.shape[0], dtype=self._quat.dtype), jnp.asarray(weights, dtype=self._quat.dtype))
     if weights.ndim != 1:
       raise ValueError("Expected `weights` to be 1 dimensional, got "
                        "shape {}.".format(weights.shape))
@@ -218,7 +223,7 @@ class Rotation(typing.NamedTuple):
       raise ValueError("Expected `weights` to have number of values "
                        "equal to number of rotations, got "
                        "{} values and {} rotations.".format(weights.shape[0], len(self)))
-    K = jnp.dot(weights[jnp.newaxis, :] * self.quat.T, self.quat)
+    K = jnp.dot(weights[jnp.newaxis, :] * self._quat.T, self._quat)
     _, v = jnp.linalg.eigh(K)
     return Rotation(v[:, -1])
 
@@ -241,25 +246,26 @@ class Rotation(typing.NamedTuple):
   @property
   def single(self) -> bool:
     """Whether this instance represents a single rotation."""
-    return self.quat.ndim == 1
+    return self._quat.ndim == 1
+
+
+jax.tree_util.register_pytree_node(
+  Rotation,
+  lambda obj: ((obj._quat,), None),
+  lambda aux, children: Rotation(*children),
+)
 
 
 @_wraps(scipy.spatial.transform.Slerp)
-class Slerp(typing.NamedTuple):
+class Slerp:
   """Spherical Linear Interpolation of Rotations."""
 
-  times: jnp.ndarray
-  timedelta: jnp.ndarray
-  rotations: Rotation
-  rotvecs: jnp.ndarray
-
-  @classmethod
-  def init(cls, times: jax.Array, rotations: Rotation):
+  def __init__(self, times: jax.Array, rotations: Rotation):
     if not isinstance(rotations, Rotation):
       raise TypeError("`rotations` must be a `Rotation` instance.")
     if rotations.single or len(rotations) == 1:
       raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
-    times = jnp.asarray(times, dtype=rotations.quat.dtype)
+    times = jnp.asarray(times, dtype=rotations.as_quat().dtype)
     if times.ndim != 1:
       raise ValueError("Expected times to be specified in a 1 "
                        "dimensional array, got {} "
@@ -272,25 +278,31 @@ class Slerp(typing.NamedTuple):
     # if jnp.any(timedelta <= 0):  # this causes a concretization error...
     #   raise ValueError("Times must be in strictly increasing order.")
     new_rotations = Rotation(rotations.as_quat()[:-1])
-    return cls(
-      times=times,
-      timedelta=timedelta,
-      rotations=new_rotations,
-      rotvecs=(new_rotations.inv() * Rotation(rotations.as_quat()[1:])).as_rotvec())
+    self._times = times
+    self._timedelta = timedelta
+    self._rotations = new_rotations
+    self._rotvecs = (new_rotations.inv() * Rotation(rotations.as_quat()[1:])).as_rotvec()
 
-  def __call__(self, times: jax.Array):
+  def __call__(self, times: jax.Array) -> jax.Array:
     """Interpolate rotations."""
-    compute_times = jnp.asarray(times, dtype=self.times.dtype)
+    compute_times = jnp.asarray(times, dtype=self._times.dtype)
     if compute_times.ndim > 1:
       raise ValueError("`times` must be at most 1-dimensional.")
     single_time = compute_times.ndim == 0
     compute_times = jnp.atleast_1d(compute_times)
-    ind = jnp.maximum(jnp.searchsorted(self.times, compute_times) - 1, 0)
-    alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
-    result = (self.rotations[ind] * Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
+    ind = jnp.maximum(jnp.searchsorted(self._times, compute_times) - 1, 0)
+    alpha = (compute_times - self._times[ind]) / self._timedelta[ind]
+    result = (self._rotations[ind] * Rotation.from_rotvec(self._rotvecs[ind] * alpha[:, None]))
     if single_time:
       return result[0]
     return result
+
+
+jax.tree_util.register_pytree_node(
+  Slerp,
+  lambda obj: ((obj._times, obj._timedelta, obj._rotations, obj._rotvecs), None),
+  lambda aux, children: Rotation(*children),
+)
 
 
 @functools.partial(jnp.vectorize, signature='(m,n),(m,n),(m)->(n,n),(),(n,n)')

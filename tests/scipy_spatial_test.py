@@ -375,7 +375,7 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
     rng = jtu.rand_default(self.rng())
     args_maker = lambda: (rng(shape, dtype),)
     times = jnp.arange(shape[0], dtype=dtype)
-    jnp_fn = lambda q: jsp_Slerp.init(times, jsp_Rotation.from_quat(q))(compute_times).as_quat()
+    jnp_fn = lambda q: jsp_Slerp(times, jsp_Rotation.from_quat(q))(compute_times).as_quat()
     np_fn = lambda q: osp_Slerp(times, osp_Rotation.from_quat(q))(compute_times).as_quat().astype(dtype)  # HACK
     self._CheckQuaternionAgainstNumpy(np_fn, jnp_fn, args_maker, tol=1e-4)
     self._CompileAndCheck(jnp_fn, args_maker, atol=1e-4)
