@@ -40,6 +40,27 @@ def cityblock(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) 
   return jnp.sum(l1_diff)
 
 
+@_wraps(scipy.spatial.distance.correlation)
+def correlation(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None, centered: bool = True) -> jax.Array:
+  """Compute the correlation distance between two 1-D arrays."""
+  if centered:
+    umu = jnp.average(u, weights=w)
+    vmu = jnp.average(v, weights=w)
+    u = u - umu
+    v = v - vmu
+  uv = jnp.average(u * v, weights=w)
+  uu = jnp.average(jnp.square(u), weights=w)
+  vv = jnp.average(jnp.square(v), weights=w)
+  dist = 1.0 - uv / jnp.sqrt(uu * vv)
+  return jnp.abs(dist)
+
+
+@_wraps(scipy.spatial.distance.cosine)
+def cosine(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the Cosine distance between 1-D arrays."""
+  return jnp.clip(correlation(u, v, w=w, centered=False), 0.0, 2.0)
+
+
 @_wraps(scipy.spatial.distance.euclidean)
 def euclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Computes the Euclidean distance between two 1-D arrays."""
