@@ -29,6 +29,12 @@ def euclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) 
   return minkowski(u, v, p=2, w=w)
 
 
+@_wraps(scipy.spatial.distance.hamming)
+def hamming(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+    """Compute the Hamming distance between two 1-D arrays."""
+    return jnp.average(u != v, weights=w)
+
+
 @_wraps(scipy.spatial.distance.euclidean)
 @functools.partial(jax.jit, static_argnames=['p'])
 def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Array] = None) -> jax.Array:

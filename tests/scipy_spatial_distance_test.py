@@ -51,6 +51,18 @@ class LaxBackedScipySpatialDistanceTests(jtu.JaxTestCase):
 
   @jtu.sample_product(
     dtype=float_dtypes,
+    shape=[(num_samples,)],
+  )
+  def testHamming(self, shape, dtype):
+    rng = jtu.rand_default(self.rng())
+    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
+    jnp_fn = lambda u, v: jsp_distance.hamming(u, v)
+    np_fn = lambda u, v: osp_distance.hamming(u, v)
+    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
+    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
+
+  @jtu.sample_product(
+    dtype=float_dtypes,
     order=[1, 2, 3, jnp.inf],
     shape=[(num_samples,)],
   )
