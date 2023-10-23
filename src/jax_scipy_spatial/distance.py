@@ -46,3 +46,13 @@ def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Arr
     u_v = root_w * u_v
   dist = jnp.linalg.norm(u_v, ord=p)
   return dist
+
+
+@_wraps(scipy.spatial.distance.sqeuclidean)
+def sqeuclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the squared Euclidean distance between two 1-D arrays."""
+  u_v = u - v
+  u_v_w = u_v
+  if w is not None:
+    u_v_w = w * u_v
+  return jnp.dot(u_v, u_v_w)
