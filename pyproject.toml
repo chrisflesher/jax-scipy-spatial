@@ -1,7 +1,8 @@
 [project]
 name = "jax-scipy-spatial"
-version = "0.1.0"
+version = "0.2.0"
 description = "Scipy spatial API for JAX"
+readme = "README.md"
 authors = [
     { name = "Chris Flesher", email = "chris.flesher@gmail.com" }
 ]
@@ -22,12 +23,17 @@ classifiers = [
 dependencies = [
     "jax",
     "jaxlib",
+    "scipy",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/chrisflesher/jax-scipy-spatial"
+"Bug Tracker" = "https://github.com/chrisflesher/jax-scipy-spatial/issues"
+
 
 [project.optional-dependencies]
 dev = [
     "tox",
-    "pre-commit",
 ]
 
 [build-system]
