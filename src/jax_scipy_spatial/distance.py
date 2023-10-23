@@ -69,8 +69,8 @@ def euclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) 
 
 @_wraps(scipy.spatial.distance.hamming)
 def hamming(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
-    """Compute the Hamming distance between two 1-D arrays."""
-    return jnp.average(u != v, weights=w)
+  """Compute the Hamming distance between two 1-D arrays."""
+  return jnp.average(u != v, weights=w)
 
 
 @_wraps(scipy.spatial.distance.euclidean)
