@@ -53,6 +53,18 @@ class LaxBackedScipySpatialDistanceTests(jtu.JaxTestCase):
     dtype=float_dtypes,
     shape=[(num_samples,)],
   )
+  def testCityblock(self, shape, dtype):
+    rng = jtu.rand_default(self.rng())
+    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
+    jnp_fn = lambda u, v: jsp_distance.cityblock(u, v)
+    np_fn = lambda u, v: osp_distance.cityblock(u, v)
+    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
+    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
+
+  @jtu.sample_product(
+    dtype=float_dtypes,
+    shape=[(num_samples,)],
+  )
   def testEuclidean(self, shape, dtype):
     rng = jtu.rand_default(self.rng())
     args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))

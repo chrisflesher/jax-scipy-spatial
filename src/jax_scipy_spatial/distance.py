@@ -25,10 +25,19 @@ from jax._src.numpy.util import _wraps
 @_wraps(scipy.spatial.distance.chebyshev)
 def chebyshev(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Chebyshev distance."""
-  result = jnp.max(jnp.abs(u - v))
+  l1_diff = jnp.abs(u - v)
   if w is not None:
-    result = jnp.max(jnp.where(w > 0, result, -jnp.inf))
-  return result
+    l1_diff = jnp.where(w > 0, l1_diff, -jnp.inf)
+  return jnp.max(l1_diff)
+
+
+@_wraps(scipy.spatial.distance.cityblock)
+def cityblock(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the City Block (Manhattan) distance."""
+  l1_diff = jnp.abs(u - v)
+  if w is not None:
+    l1_diff = w * l1_diff
+  return jnp.sum(l1_diff)
 
 
 @_wraps(scipy.spatial.distance.euclidean)
