@@ -1,5 +1,4 @@
 # Copyright 2023 Chris Flesher.
-# Copyright 2023 The JAX Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +20,15 @@ import scipy.spatial.distance
 import jax
 import jax.numpy as jnp
 from jax._src.numpy.util import _wraps
+
+
+@_wraps(scipy.spatial.distance.chebyshev)
+def chebyshev(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the Chebyshev distance."""
+  result = jnp.max(jnp.abs(u - v))
+  if w is not None:
+    result = jnp.max(jnp.where(w > 0, result, -jnp.inf))
+  return result
 
 
 @_wraps(scipy.spatial.distance.euclidean)
