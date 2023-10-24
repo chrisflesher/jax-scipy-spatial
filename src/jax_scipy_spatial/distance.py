@@ -128,6 +128,21 @@ def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Arr
   return dist
 
 
+@_wraps(scipy.spatial.distance.russellrao)
+def russellrao(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the Russell-Rao dissimilarity between two boolean 1-D arrays."""
+  if u.dtype == v.dtype == bool and w is None:
+    ntt = (u & v).sum()
+    n = u.size
+  elif w is None:
+    ntt = (u * v).sum()
+    n = u.size
+  else:
+    ntt = (u * v * w).sum()
+    n = w.sum()
+  return (n - ntt) / n
+
+
 @_wraps(scipy.spatial.distance.sqeuclidean)
 def sqeuclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the squared Euclidean distance between two 1-D arrays."""
