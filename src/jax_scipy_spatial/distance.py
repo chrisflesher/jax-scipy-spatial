@@ -22,6 +22,29 @@ import jax.numpy as jnp
 from jax._src.numpy.util import _wraps
 
 
+@_wraps(scipy.spatial.distance.braycurtis)
+def braycurtis(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the Bray-Curtis distance between two 1-D arrays."""
+  l1_diff = jnp.abs(u - v)
+  l1_sum = jnp.abs(u + v)
+  if w is not None:
+    l1_diff = w * l1_diff
+    l1_sum = w * l1_sum
+  return jnp.sum(l1_diff) / jnp.sum(l1_sum)
+
+
+@_wraps(scipy.spatial.distance.canberra)
+def canberra(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
+  """Compute the Canberra distance between two 1-D arrays."""
+  l1_diff = jnp.abs(u - v)
+  abs_u = jnp.abs(u)
+  abs_v = jnp.abs(v)
+  d = l1_diff / (abs_u + abs_v)
+  if w is not None:
+    d = w * d
+  return jnp.nansum(d)
+
+
 @_wraps(scipy.spatial.distance.chebyshev)
 def chebyshev(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Chebyshev distance."""
@@ -70,10 +93,23 @@ def euclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) 
 @_wraps(scipy.spatial.distance.hamming)
 def hamming(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Hamming distance between two 1-D arrays."""
-  return jnp.average(u != v, weights=w)
+  return jnp.average((u != v).astype(u.dtype), weights=w)
 
 
-@_wraps(scipy.spatial.distance.euclidean)
+@_wraps(scipy.spatial.distance.jaccard)
+def jaccard(u, v, w=None):
+  """Compute the Jaccard-Needham dissimilarity between two boolean 1-D arrays."""
+  nonzero = jnp.bitwise_or(u != 0, v != 0)
+  unequal_nonzero = jnp.bitwise_and((u != v), nonzero)
+  if w is not None:
+    nonzero = jnp.where(nonzero, w, 0.)
+    unequal_nonzero = jnp.where(unequal_nonzero, w, 0.)
+  a = jnp.sum(unequal_nonzero)
+  b = jnp.sum(nonzero)
+  return jnp.where(b != 0, a / b, 0)
+
+
+@_wraps(scipy.spatial.distance.minkowski)
 @functools.partial(jax.jit, static_argnames=['p'])
 def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Minkowski distance between two 1-D arrays."""
@@ -84,7 +120,7 @@ def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Arr
     elif p == 2:
       root_w = jnp.sqrt(w)
     elif p == jnp.inf:
-      root_w = (w != 0)
+      root_w = (w != 0).astype(w)
     else:
       root_w = jnp.power(w, 1/p)
     u_v = root_w * u_v

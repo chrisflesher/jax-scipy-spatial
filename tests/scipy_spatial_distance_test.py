@@ -38,74 +38,27 @@ class LaxBackedScipySpatialDistanceTests(jtu.JaxTestCase):
   """Tests for LAX-backed scipy.spatial.distance implementations."""
 
   @jtu.sample_product(
+    method=[
+      'braycurtis',
+      'canberra',
+      'chebyshev',
+      'cityblock',
+      'correlation',
+      'cosine',
+      'euclidean',
+      'hamming',
+      'jaccard',
+      'sqeuclidean',
+    ],
     dtype=float_dtypes,
     shape=[(num_samples,)],
+    use_weight=[False, True],
   )
-  def testChebyshev(self, shape, dtype):
+  def testDistance(self, method, shape, dtype, use_weight):
     rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.chebyshev(u, v)
-    np_fn = lambda u, v: osp_distance.chebyshev(u, v)
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    shape=[(num_samples,)],
-  )
-  def testCityblock(self, shape, dtype):
-    rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.cityblock(u, v)
-    np_fn = lambda u, v: osp_distance.cityblock(u, v)
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    shape=[(num_samples,)],
-  )
-  def testCorrelation(self, shape, dtype):
-    rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.correlation(u, v)
-    np_fn = lambda u, v: osp_distance.correlation(u, v)
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    shape=[(num_samples,)],
-  )
-  def testCosine(self, shape, dtype):
-    rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.cosine(u, v)
-    np_fn = lambda u, v: osp_distance.cosine(u, v)
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    shape=[(num_samples,)],
-  )
-  def testEuclidean(self, shape, dtype):
-    rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.euclidean(u, v)
-    np_fn = lambda u, v: osp_distance.euclidean(u, v)
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    shape=[(num_samples,)],
-  )
-  def testHamming(self, shape, dtype):
-    rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.hamming(u, v)
-    np_fn = lambda u, v: osp_distance.hamming(u, v)
+    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype), jnp.abs(rng(shape, dtype)) if use_weight else None)
+    jnp_fn = lambda u, v, w: getattr(jsp_distance, method)(u, v, w)
+    np_fn = lambda u, v, w: getattr(osp_distance, method)(u, v, w)
     self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
     self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
 
@@ -113,24 +66,13 @@ class LaxBackedScipySpatialDistanceTests(jtu.JaxTestCase):
     dtype=float_dtypes,
     order=[1, 2, 3, jnp.inf],
     shape=[(num_samples,)],
+    use_weight=[False, True],
   )
-  def testMinkowski(self, order, shape, dtype):
+  def testMinkowski(self, order, shape, dtype, use_weight):
     rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.minkowski(u, v, p=order)
-    np_fn = lambda u, v: osp_distance.minkowski(u, v, p=order)
-    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    shape=[(num_samples,)],
-  )
-  def testSqEuclidean(self, shape, dtype):
-    rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype))
-    jnp_fn = lambda u, v: jsp_distance.sqeuclidean(u, v)
-    np_fn = lambda u, v: osp_distance.sqeuclidean(u, v)
+    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype), jnp.abs(rng(shape, dtype)) if use_weight else None)
+    jnp_fn = lambda u, v, w: jsp_distance.minkowski(u, v, p=order, w=w)
+    np_fn = lambda u, v, w: osp_distance.minkowski(u, v, p=order, w=w)
     self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
     self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
 
