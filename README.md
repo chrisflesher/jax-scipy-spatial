@@ -26,10 +26,6 @@ Please refer to scipy documentation.
 
 ## Contributing
 
-Note that much of the code in this module may be difficult to implement
-properly in JAX, (e.g. nearest neighbor search). We request any submissions to
-this repo be fully compatible with both `vmap` and `grad`.
-
 To run unit tests on your local machine:
 ```
 tox
