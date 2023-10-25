@@ -39,7 +39,7 @@ num_samples = 2
 
 
 class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
-  """Tests for LAX-backed scipy.spatial implementations."""
+  """Tests for LAX-backed scipy.spatial.transform implementations."""
 
   @jtu.sample_product(
     dtype=float_dtypes,
@@ -397,4 +397,4 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
 
 
 if __name__ == "__main__":
-    absltest.main(testLoader=jtu.JaxTestLoader())
+  absltest.main(testLoader=jtu.JaxTestLoader())
