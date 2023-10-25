@@ -93,7 +93,10 @@ def euclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) 
 @_wraps(scipy.spatial.distance.hamming)
 def hamming(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Hamming distance between two 1-D arrays."""
-  return jnp.average((u != v).astype(u.dtype), weights=w)
+  u_ne_v = u != v
+  if w is not None:
+    u_ne_v = u_ne_v.astype(w)
+  return jnp.average(u_ne_v, weights=w)
 
 
 @_wraps(scipy.spatial.distance.jaccard)
@@ -132,14 +135,14 @@ def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Arr
 def russellrao(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Russell-Rao dissimilarity between two boolean 1-D arrays."""
   if u.dtype == v.dtype == bool and w is None:
-    ntt = (u & v).sum()
+    ntt = jnp.sum(u & v)
     n = u.size
   elif w is None:
-    ntt = (u * v).sum()
+    ntt = jnp.sum(u * v)
     n = u.size
   else:
-    ntt = (u * v * w).sum()
-    n = w.sum()
+    ntt = jnp.sum(u * v * w)
+    n = jnp.sum(w)
   return (n - ntt) / n
 
 

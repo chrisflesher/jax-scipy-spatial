@@ -39,31 +39,47 @@ class LaxBackedScipySpatialDistanceTests(jtu.JaxTestCase):
 
   @jtu.sample_product(
     method=[
+      # 'dice',
+      # 'directed_hausdorff',
+      'hamming',
+      # 'jensenshannon',
+      # 'kulczynski1',
+      # 'rogerstanimoto',
+      # 'sokalmichener',
+      # 'sokalsneath',
+      # 'yule'
+    ],
+    dtype=jtu.dtypes.integer,
+    shape=[(num_samples,)],
+    use_weight=[False, True],
+  )
+  def testDistanceBoolean(self, method, shape, dtype, use_weight):
+    rng = jtu.rand_default(self.rng())
+    args_maker = lambda: (rng(shape, dtype), rng(shape, dtype), jnp.abs(rng(shape, jnp.float32)) if use_weight else None)
+    jnp_fn = lambda u, v, w: getattr(jsp_distance, method)(u, v, w)
+    np_fn = lambda u, v, w: getattr(osp_distance, method)(u, v, w)
+    self._CheckAgainstNumpy(np_fn, jnp_fn, args_maker, check_dtypes=False, tol=1e-4)
+    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
+
+  @jtu.sample_product(
+    method=[
       'braycurtis',
       'canberra',
       'chebyshev',
       'cityblock',
       'correlation',
-      # 'dice',
-      # 'directed_hausdorff',
       'cosine',
       'euclidean',
       'hamming',
       'jaccard',
-      # 'jensenshannon',
-      # 'kulczynski1',
-      # 'rogerstanimoto',
       'russellrao',
-      # 'sokalmichener',
-      # 'sokalsneath',
       'sqeuclidean',
-      # 'yule'
     ],
     dtype=float_dtypes,
     shape=[(num_samples,)],
     use_weight=[False, True],
   )
-  def testDistance(self, method, shape, dtype, use_weight):
+  def testDistanceNumeric(self, method, shape, dtype, use_weight):
     rng = jtu.rand_default(self.rng())
     args_maker = lambda: (rng(shape, dtype), rng(shape, dtype), jnp.abs(rng(shape, dtype)) if use_weight else None)
     jnp_fn = lambda u, v, w: getattr(jsp_distance, method)(u, v, w)
