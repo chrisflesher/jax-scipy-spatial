@@ -10,14 +10,14 @@ Currently the following items are implemented:
 
 ## Install
 ```
-pip install .
+pip install jax-scipy-spatial
 ```
 
 ## Usage
 ```
-import jax_scipy_spatial.transform as jtr
+from jax_scipy_spatial.transform import Rotation
 
-rotation = jtr.Rotation.from_euler('xyz', jnp.array([0., 0., 180.]), degrees=True)
+rotation = Rotation.from_euler('xyz', jnp.array([0., 0., 180.]), degrees=True)
 print(rotation)
 ```
 
