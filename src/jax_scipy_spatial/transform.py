@@ -629,11 +629,6 @@ def _reduce(p: jax.Array, l: jax.Array, r: jax.Array) -> jax.Array:
   return reduced, left_best, right_best
 
 
-@functools.partial(jnp.vectorize, signature='()->()')
-def _safe_sqrt(x: jax.Array) -> jax.Array:
-  return jnp.sqrt(jnp.where(x > 0., x, 0.))
-
-
 def _split_quaternion(q: jax.Array) -> jax.Array:
   q = jnp.atleast_2d(q)
   return q[:, -1], q[:, :-1]
@@ -641,4 +636,5 @@ def _split_quaternion(q: jax.Array) -> jax.Array:
 
 @functools.partial(jnp.vectorize, signature='(n)->()')
 def _vector_norm(vector: jax.Array) -> jax.Array:
-  return _safe_sqrt(jnp.dot(vector, vector))
+  x = jnp.dot(vector, vector)
+  return jnp.sqrt(jnp.where(x > 0., x, 0.))
