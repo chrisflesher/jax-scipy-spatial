@@ -33,7 +33,6 @@ class Rotation:
 
   def __init__(self, quat: jax.Array):
     """Initialize."""
-    assert quat.shape[-1] == 4
     self._quat = quat
 
   @classmethod
@@ -602,7 +601,7 @@ def _random_quaternion(random_key: jax.Array, num: typing.Optional[int], dtype):
 
 
 @functools.partial(jnp.vectorize, signature='(n),(n),(n)->(n),(),()')
-def _reduce(p: jax.Array, l: jax.Array, r: jax.Array):
+def _reduce(p: jax.Array, l: jax.Array, r: jax.Array) -> jax.Array:
   e = jnp.zeros((3, 3, 3), dtype=p.dtype)
   e = e.at[[0, 1, 2], [1, 2, 0], [2, 0, 1]].set(1)
   e = e.at[[0, 2, 1], [2, 1, 0], [1, 0, 2]].set(-1)
@@ -630,11 +629,12 @@ def _reduce(p: jax.Array, l: jax.Array, r: jax.Array):
   return reduced, left_best, right_best
 
 
-def _split_quaternion(q):
+def _split_quaternion(q: jax.Array) -> jax.Array:
   q = jnp.atleast_2d(q)
   return q[:, -1], q[:, :-1]
 
 
 @functools.partial(jnp.vectorize, signature='(n)->()')
 def _vector_norm(vector: jax.Array) -> jax.Array:
-  return jnp.sqrt(jnp.dot(vector, vector))
+  x = jnp.dot(vector, vector)
+  return jnp.sqrt(jnp.where(x > 0., x, 0.))
