@@ -112,8 +112,6 @@ class Rotation:
       raise ValueError("Expected consecutive axes to be different, "
                        "got {}".format(seq))
     angles = jnp.atleast_1d(angles)
-    if len(seq) == 1 and angles.ndim == 1:
-      angles = angles[:, jnp.newaxis]
     axes = jnp.array([_elementary_basis_index(x) for x in seq.lower()])
     quat = _elementary_quat_compose(angles, axes, intrinsic, degrees)
     return cls(quat)
