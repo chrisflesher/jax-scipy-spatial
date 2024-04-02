@@ -22,7 +22,6 @@ import scipy.spatial.transform
 import jax
 import jax.numpy as jnp
 from scipy.constants import golden
-
 try:
   from jax._src.numpy.util import implements
 except ImportError:

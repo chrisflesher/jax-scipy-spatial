@@ -1,6 +1,6 @@
 [project]
 name = "jax-scipy-spatial"
-version = "0.2.2"
+version = "0.2.3"
 description = "Scipy spatial API for JAX"
 readme = "README.md"
 authors = [

@@ -14,18 +14,12 @@
 
 from absl.testing import absltest
 
-import jax
-
 import scipy.version
 from jax._src import test_util as jtu
 import jax_scipy_spatial.distance as jsp_distance
 import scipy.spatial.distance as osp_distance
 
 import jax.numpy as jnp
-import numpy as onp
-from jax.config import config
-
-config.parse_flags_with_absl()
 
 scipy_version = tuple(map(int, scipy.version.version.split('.')[:3]))
 
