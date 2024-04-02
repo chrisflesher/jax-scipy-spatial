@@ -22,7 +22,7 @@ print(rotation)
 ```
 
 ## Documentation
-Please refer to scipy documentation.
+Please refer to [scipy documentation](https://docs.scipy.org/doc/scipy/reference/spatial.html).
 
 ## Contributing
 
