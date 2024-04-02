@@ -21,11 +21,15 @@ import scipy.spatial.transform
 
 import jax
 import jax.numpy as jnp
-from jax._src.numpy.util import _wraps
 from scipy.constants import golden
 
+try:
+  from jax._src.numpy.util import implements
+except ImportError:
+  from jax._src.numpy.util import _wraps as implements  # for jax < 0.4.25
 
-@_wraps(scipy.spatial.transform.Rotation)
+
+@implements(scipy.spatial.transform.Rotation)
 class Rotation:
   """Rotation in 3 dimensions."""
 
@@ -40,12 +44,10 @@ class Rotation:
     """Estimate a rotation to optimally align two sets of vectors."""
     a = jnp.asarray(a)
     if a.ndim < 2 or a.shape[-1] != 3:
-      raise ValueError("Expected input `a` to have shape (..., 3), "
-                       "got {}".format(a.shape))
+      raise ValueError(f"Expected input `a` to have shape (..., 3), got {a.shape}")
     b = jnp.asarray(b)
     if b.ndim < 2 or b.shape[-1] != 3:
-      raise ValueError("Expected input `b` to have shape (..., 3), "
-                       "got {}.".format(b.shape))
+      raise ValueError(f"Expected input `b` to have shape (..., 3), got {b.shape}")
     if weights is None:
       weights = jnp.ones(b.shape[-2], dtype=b.dtype)
     else:
@@ -101,21 +103,15 @@ class Rotation:
     """Initialize from Euler angles."""
     num_axes = len(seq)
     if num_axes < 1 or num_axes > 3:
-      raise ValueError("Expected axis specification to be a non-empty "
-                       "string of upto 3 characters, got {}".format(seq))
+      raise ValueError(f"Expected axis specification to be a non-empty string of upto 3 characters, got {seq}")
     intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
     extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
     if not (intrinsic or extrinsic):
-      raise ValueError("Expected axes from `seq` to be from ['x', 'y', "
-                       "'z'] or ['X', 'Y', 'Z'], got {}".format(seq))
+      raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
     if any(seq[i] == seq[i+1] for i in range(num_axes - 1)):
-      raise ValueError("Expected consecutive axes to be different, "
-                       "got {}".format(seq))
-    angles = jnp.atleast_1d(angles)
-    if len(seq) == 1 and angles.ndim == 1:
-      angles = angles[:, jnp.newaxis]
+      raise ValueError(f"Expected consecutive axes to be different, got {seq}")
     axes = jnp.array([_elementary_basis_index(x) for x in seq.lower()])
-    quat = _elementary_quat_compose(angles, axes, intrinsic, degrees)
+    quat = _elementary_quat_compose(angles.reshape(-1, axes.size), axes, intrinsic, degrees)
     return cls(quat)
 
   @classmethod
@@ -175,16 +171,13 @@ class Rotation:
   def as_euler(self, seq: str, degrees: bool = False):
     """Represent as Euler angles."""
     if len(seq) != 3:
-      raise ValueError("Expected 3 axes, got {}.".format(seq))
+      raise ValueError(f"Expected 3 axes, got {seq}.")
     intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
     extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
     if not (intrinsic or extrinsic):
-      raise ValueError("Expected axes from `seq` to be from "
-                       "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
-                       "got {}".format(seq))
+      raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
     if any(seq[i] == seq[i+1] for i in range(2)):
-      raise ValueError("Expected consecutive axes to be different, "
-                       "got {}".format(seq))
+      raise ValueError(f"Expected consecutive axes to be different, got {seq}")
     axes = jnp.array([_elementary_basis_index(x) for x in seq.lower()])
     return _compute_euler_from_quat(self._quat, axes, extrinsic, degrees)
 
@@ -216,11 +209,9 @@ class Rotation:
     """Get the mean of the rotations."""
     weights = jnp.where(weights is None, jnp.ones(self._quat.shape[0], dtype=self._quat.dtype), jnp.asarray(weights, dtype=self._quat.dtype))
     if weights.ndim != 1:
-      raise ValueError("Expected `weights` to be 1 dimensional, got "
-                       "shape {}.".format(weights.shape))
+      raise ValueError(f"Expected `weights` to be 1 dimensional, got shape {weights.shape}.")
     if weights.shape[0] != len(self):
-      raise ValueError("Expected `weights` to have number of values "
-                       "equal to number of rotations, got "
+      raise ValueError("Expected `weights` to have number of values equal to number of rotations, got "
                        "{} values and {} rotations.".format(weights.shape[0], len(self)))
     K = jnp.dot(weights[jnp.newaxis, :] * self._quat.T, self._quat)
     _, v = jnp.linalg.eigh(K)
@@ -255,7 +246,7 @@ jax.tree_util.register_pytree_node(
 )
 
 
-@_wraps(scipy.spatial.transform.Slerp)
+@implements(scipy.spatial.transform.Slerp)
 class Slerp:
   """Spherical Linear Interpolation of Rotations."""
 
@@ -266,13 +257,10 @@ class Slerp:
       raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
     times = jnp.asarray(times, dtype=rotations.as_quat().dtype)
     if times.ndim != 1:
-      raise ValueError("Expected times to be specified in a 1 "
-                       "dimensional array, got {} "
-                       "dimensions.".format(times.ndim))
+      raise ValueError(f"Expected times to be specified in a 1 dimensional array, got {times.ndim} dimensions.")
     if times.shape[0] != len(rotations):
-      raise ValueError("Expected number of rotations to be equal to "
-                       "number of timestamps given, got {} rotations "
-                       "and {} timestamps.".format(len(rotations), times.shape[0]))
+      raise ValueError("Expected number of rotations to be equal to number of timestamps given, got "
+                       "{} rotations and {} timestamps.".format(len(rotations), times.shape[0]))
     timedelta = jnp.diff(times)
     # if jnp.any(timedelta <= 0):  # this causes a concretization error...
     #   raise ValueError("Times must be in strictly increasing order.")
@@ -322,7 +310,7 @@ def _align_vectors(a: jax.Array, b: jax.Array, weights: jax.Array) -> typing.Tup
   return C, rssd, sensitivity
 
 
-@functools.partial(jnp.vectorize, signature='(m,m),(m),()->(m)')
+@functools.partial(jnp.vectorize, signature='(m,m),(m)->(m)', excluded=(2,))
 def _apply(matrix: jax.Array, vector: jax.Array, inverse: bool) -> jax.Array:
   return jnp.where(inverse, matrix.T, matrix) @ vector
 
@@ -355,7 +343,7 @@ def _as_mrp(quat: jax.Array) -> jax.Array:
   return sign * quat[:3] / denominator
 
 
-@functools.partial(jnp.vectorize, signature='(m),()->(n)')
+@functools.partial(jnp.vectorize, signature='(m)->(n)', excluded=(1,))
 def _as_rotvec(quat: jax.Array, degrees: bool) -> jax.Array:
   quat = jnp.where(quat[3] < 0, -quat, quat)  # w > 0 to ensure 0 <= angle <= pi
   angle = 2. * jnp.arctan2(_vector_norm(quat[:3]), quat[3])
@@ -376,7 +364,7 @@ def _compose_quat(p: jax.Array, q: jax.Array) -> jax.Array:
                     p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]])
 
 
-@functools.partial(jnp.vectorize, signature='(m),(l),(),()->(n)')
+@functools.partial(jnp.vectorize, signature='(m),(l)->(n)', excluded=(2, 3))
 def _compute_euler_from_quat(quat: jax.Array, axes: jax.Array, extrinsic: bool, degrees: bool) -> jax.Array:
   angle_first = jnp.where(extrinsic, 0, 2)
   angle_third = jnp.where(extrinsic, 2, 0)
@@ -516,10 +504,10 @@ def _elementary_basis_index(axis: str) -> int:
     return 1
   elif axis == 'z':
     return 2
-  raise ValueError("Expected axis to be from ['x', 'y', 'z'], got {}".format(axis))
+  raise ValueError(f"Expected axis to be from ['x', 'y', 'z'], got {axis}")
 
 
-@functools.partial(jnp.vectorize, signature=('(m),(m),(),()->(n)'))
+@functools.partial(jnp.vectorize, signature='(m),(m)->(n)', excluded=(2, 3))
 def _elementary_quat_compose(angles: jax.Array, axes: jax.Array, intrinsic: bool, degrees: bool) -> jax.Array:
   angles = jnp.where(degrees, jnp.deg2rad(angles), angles)
   result = _make_elementary_quat(axes[0], angles[0])
@@ -529,7 +517,7 @@ def _elementary_quat_compose(angles: jax.Array, axes: jax.Array, intrinsic: bool
   return result
 
 
-@functools.partial(jnp.vectorize, signature=('(m),()->(n)'))
+@functools.partial(jnp.vectorize, signature='(m)->(n)', excluded=(1,))
 def _from_rotvec(rotvec: jax.Array, degrees: bool) -> jax.Array:
   rotvec = jnp.where(degrees, jnp.deg2rad(rotvec), rotvec)
   angle = _vector_norm(rotvec)
@@ -540,7 +528,7 @@ def _from_rotvec(rotvec: jax.Array, degrees: bool) -> jax.Array:
   return jnp.hstack([scale * rotvec, jnp.cos(angle / 2)])
 
 
-@functools.partial(jnp.vectorize, signature=('(m,m)->(n)'))
+@functools.partial(jnp.vectorize, signature='(m,m)->(n)')
 def _from_matrix(matrix: jax.Array) -> jax.Array:
   matrix_trace = matrix[0, 0] + matrix[1, 1] + matrix[2, 2]
   decision = jnp.array([matrix[0, 0], matrix[1, 1], matrix[2, 2], matrix_trace], dtype=matrix.dtype)
