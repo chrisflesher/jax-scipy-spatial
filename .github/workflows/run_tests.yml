@@ -8,9 +8,16 @@ on:
 
 jobs:
   run-test:
-    install:
-      - pip install tox
-    strategy:
-      matrix:
-        version: [py38, py312]
-    script: tox -e ${{ matrix.version }} -n auto
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox
+
+      - name: Test with tox
+        run: |
+          tox -- -n auto
