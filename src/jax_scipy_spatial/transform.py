@@ -247,6 +247,7 @@ jax.tree_util.register_pytree_node(
 )
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m,n),(m,n),(m)->(n,n),(),(n,n)')
 def _align_vectors(a: jax.Array, b: jax.Array, weights: jax.Array) -> typing.Tuple[jax.Array, jax.Array, jax.Array]:
   B = jnp.einsum('ji,jk->ik', weights[:, jnp.newaxis] * a, b)
@@ -265,11 +266,13 @@ def _align_vectors(a: jax.Array, b: jax.Array, weights: jax.Array) -> typing.Tup
   return C, rssd, sensitivity
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m,m),(m)->(m)', excluded=(2,))
 def _apply(matrix: jax.Array, vector: jax.Array, inverse: bool) -> jax.Array:
   return jnp.where(inverse, matrix.T, matrix) @ vector
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m)->(n,n)')
 def _as_matrix(quat: jax.Array) -> jax.Array:
   x = quat[0]
@@ -291,6 +294,7 @@ def _as_matrix(quat: jax.Array) -> jax.Array:
                     [2 * (xz - yw), 2 * (yz + xw), - x2 - y2 + z2 + w2]])
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m)->(n)')
 def _as_mrp(quat: jax.Array) -> jax.Array:
   sign = jnp.where(quat[3] < 0, -1., 1.)
@@ -298,6 +302,7 @@ def _as_mrp(quat: jax.Array) -> jax.Array:
   return sign * quat[:3] / denominator
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m)->(n)', excluded=(1,))
 def _as_rotvec(quat: jax.Array, degrees: bool) -> jax.Array:
   quat = jnp.where(quat[3] < 0, -quat, quat)  # w > 0 to ensure 0 <= angle <= pi
@@ -310,6 +315,7 @@ def _as_rotvec(quat: jax.Array, degrees: bool) -> jax.Array:
   return scale * jnp.array(quat[:3])
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(n),(n)->(n)')
 def _compose_quat(p: jax.Array, q: jax.Array) -> jax.Array:
   cross = jnp.cross(p[:3], q[:3])
@@ -319,6 +325,7 @@ def _compose_quat(p: jax.Array, q: jax.Array) -> jax.Array:
                     p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]])
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m),(l)->(n)', excluded=(2, 3))
 def _compute_euler_from_quat(quat: jax.Array, axes: jax.Array, extrinsic: bool, degrees: bool) -> jax.Array:
   angle_first = jnp.where(extrinsic, 0, 2)
@@ -360,6 +367,7 @@ def _elementary_basis_index(axis: str) -> int:
   raise ValueError(f"Expected axis to be from ['x', 'y', 'z'], got {axis}")
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m),(m)->(n)', excluded=(2, 3))
 def _elementary_quat_compose(angles: jax.Array, axes: jax.Array, intrinsic: bool, degrees: bool) -> jax.Array:
   angles = jnp.where(degrees, jnp.deg2rad(angles), angles)
@@ -370,6 +378,7 @@ def _elementary_quat_compose(angles: jax.Array, axes: jax.Array, intrinsic: bool
   return result
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m)->(n)', excluded=(1,))
 def _from_rotvec(rotvec: jax.Array, degrees: bool) -> jax.Array:
   rotvec = jnp.where(degrees, jnp.deg2rad(rotvec), rotvec)
@@ -381,6 +390,7 @@ def _from_rotvec(rotvec: jax.Array, degrees: bool) -> jax.Array:
   return jnp.hstack([scale * rotvec, jnp.cos(angle / 2)])
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m,m)->(n)')
 def _from_matrix(matrix: jax.Array) -> jax.Array:
   matrix_trace = matrix[0, 0] + matrix[1, 1] + matrix[2, 2]
@@ -403,22 +413,26 @@ def _from_matrix(matrix: jax.Array) -> jax.Array:
   return _normalize_quaternion(quat)
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(m)->(n)')
 def _from_mrp(mrp: jax.Array) -> jax.Array:
   mrp_squared_plus_1 = jnp.dot(mrp, mrp) + 1
   return jnp.hstack([2 * mrp[:3], (2 - mrp_squared_plus_1)]) / mrp_squared_plus_1
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(n)->(n)')
 def _inv(quat: jax.Array) -> jax.Array:
   return quat.at[3].set(-quat[3])
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(n)->()')
 def _magnitude(quat: jax.Array) -> jax.Array:
   return 2. * jnp.arctan2(_vector_norm(quat[:3]), jnp.abs(quat[3]))
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(),()->(n)')
 def _make_elementary_quat(axis: int, angle: jax.Array) -> jax.Array:
   quat = jnp.zeros(4, dtype=angle.dtype)
@@ -427,6 +441,7 @@ def _make_elementary_quat(axis: int, angle: jax.Array) -> jax.Array:
   return quat
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(n)->(n)')
 def _normalize_quaternion(quat: jax.Array) -> jax.Array:
   return quat / _vector_norm(quat)
@@ -441,6 +456,7 @@ def _random_quaternion(random_key: jax.Array, num: typing.Optional[int], dtype):
   return _normalize_quaternion(sample)
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(n),(n),(n)->(n),(),()')
 def _reduce(p: jax.Array, l: jax.Array, r: jax.Array) -> jax.Array:
   e = jnp.zeros((3, 3, 3), dtype=p.dtype)
@@ -470,6 +486,7 @@ def _reduce(p: jax.Array, l: jax.Array, r: jax.Array) -> jax.Array:
   return reduced, left_best, right_best
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(),(m),(m,n)->(n)')
 def _slerp(time: jax.Array, times: jax.Array, quats: jax.Array) -> jax.Array:
   rotations = Rotation(quats)
@@ -487,6 +504,7 @@ def _split_quaternion(q: jax.Array) -> jax.Array:
   return q[:, -1], q[:, :-1]
 
 
+@jax.numpy_rank_promotion('allow')
 @functools.partial(jnp.vectorize, signature='(n)->()')
 def _vector_norm(vector: jax.Array) -> jax.Array:
   x = jnp.dot(vector, vector)
