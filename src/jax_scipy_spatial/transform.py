@@ -21,13 +21,8 @@ import scipy.spatial.transform
 
 import jax
 import jax.numpy as jnp
-try:
-  from jax._src.numpy.util import implements
-except ImportError:
-  from jax._src.numpy.util import _wraps as implements  # for jax < 0.4.25
 
 
-@implements(scipy.spatial.transform.Rotation)
 class Rotation:
   """Rotation in 3 dimensions."""
 
@@ -217,7 +212,6 @@ jax.tree_util.register_pytree_node(
 )
 
 
-@implements(scipy.spatial.transform.Slerp)
 class Slerp:
   """Spherical Linear Interpolation of Rotations."""
 
