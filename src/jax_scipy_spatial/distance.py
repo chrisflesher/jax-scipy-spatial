@@ -90,18 +90,6 @@ def hamming(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) ->
   return jnp.average(u_ne_v, weights=w)
 
 
-def jaccard(u, v, w=None):
-  """Compute the Jaccard-Needham dissimilarity between two boolean 1-D arrays."""
-  nonzero = jnp.bitwise_or(u != 0, v != 0)
-  unequal_nonzero = jnp.bitwise_and((u != v), nonzero)
-  if w is not None:
-    nonzero = jnp.where(nonzero, w, 0.)
-    unequal_nonzero = jnp.where(unequal_nonzero, w, 0.)
-  a = jnp.sum(unequal_nonzero)
-  b = jnp.sum(nonzero)
-  return jnp.where(b != 0, a / b, 0)
-
-
 @functools.partial(jax.jit, static_argnames=['p'])
 def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Array] = None) -> jax.Array:
   """Compute the Minkowski distance between two 1-D arrays."""
@@ -118,20 +106,6 @@ def minkowski(u: jax.Array, v: jax.Array, p: int = 2, w: typing.Optional[jax.Arr
     u_v = root_w * u_v
   dist = jnp.linalg.norm(u_v, ord=p)
   return dist
-
-
-def russellrao(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:
-  """Compute the Russell-Rao dissimilarity between two boolean 1-D arrays."""
-  if u.dtype == v.dtype == bool and w is None:
-    ntt = jnp.sum(u & v)
-    n = u.size
-  elif w is None:
-    ntt = jnp.sum(u * v)
-    n = u.size
-  else:
-    ntt = jnp.sum(u * v * w)
-    n = jnp.sum(w)
-  return (n - ntt) / n
 
 
 def sqeuclidean(u: jax.Array, v: jax.Array, w: typing.Optional[jax.Array] = None) -> jax.Array:

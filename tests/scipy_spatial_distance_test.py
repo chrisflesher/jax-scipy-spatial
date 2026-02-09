@@ -65,8 +65,6 @@ class LaxBackedScipySpatialDistanceTests(jtu.JaxTestCase):
       'cosine',
       'euclidean',
       'hamming',
-      'jaccard',
-      'russellrao',
       'sqeuclidean',
     ],
     dtype=float_dtypes,
