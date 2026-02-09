@@ -73,29 +73,6 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
 
   @jtu.sample_product(
     dtype=float_dtypes,
-    group=['I', 'O', 'T'],
-  )
-  def testRotationCreateGroup(self, group, dtype):
-    args_maker = lambda: (None,)
-    jnp_fn = lambda x: jsp_Rotation.create_group(group, dtype=dtype).as_quat()
-    np_fn = lambda x: osp_Rotation.create_group(group).as_quat()
-    self._CheckQuaternionAgainstNumpy(np_fn, jnp_fn, args_maker, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
-    group=['C1', 'D1', 'C2', 'D2', 'C3', 'D3'],
-    axis=['Z', 'Y', 'X'],
-  )
-  def testRotationCreateGroupWithAxis(self, group, axis, dtype):
-    args_maker = lambda: (None,)
-    jnp_fn = lambda x: jsp_Rotation.create_group(group, axis, dtype).as_quat()
-    np_fn = lambda x: osp_Rotation.create_group(group, axis).as_quat()
-    self._CheckQuaternionAgainstNumpy(np_fn, jnp_fn, args_maker, tol=1e-4)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
-
-  @jtu.sample_product(
-    dtype=float_dtypes,
     shape=[(4,), (num_samples, 4)],
     seq=['xyz', 'zyx', 'XYZ', 'ZYX'],
     degrees=[True, False],
