@@ -222,7 +222,7 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
   )
   def testRotationFromMatrix(self, shape, dtype):
     rng = jtu.rand_default(self.rng())
-    args_maker = lambda: (rng(shape, dtype),)
+    args_maker = lambda: (onp.linalg.qr(rng(shape, dtype))[0],)
     jnp_fn = lambda m: jsp_Rotation.from_matrix(m).as_quat()
     np_fn = lambda m: osp_Rotation.from_matrix(m).as_quat().astype(dtype)  # HACK
     self._CheckQuaternionAgainstNumpy(np_fn, jnp_fn, args_maker, tol=1e-4)
