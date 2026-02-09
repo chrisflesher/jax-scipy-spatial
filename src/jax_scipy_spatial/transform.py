@@ -176,7 +176,8 @@ class Rotation:
 
   def mean(self, weights: typing.Optional[jax.Array] = None):
     """Get the mean of the rotations."""
-    weights = jnp.where(weights is None, jnp.ones(self._quat.shape[0], dtype=self._quat.dtype), jnp.asarray(weights, dtype=self._quat.dtype))
+    if weights is None:
+      weights = jnp.ones(self._quat.shape[0], dtype=self._quat.dtype)
     if weights.ndim != 1:
       raise ValueError(f"Expected `weights` to be 1 dimensional, got shape {weights.shape}.")
     if weights.shape[0] != len(self):

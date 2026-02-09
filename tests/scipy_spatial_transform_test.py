@@ -295,9 +295,8 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
     args_maker = lambda: (rng(shape, dtype), jnp.abs(rng(shape[0], dtype)) if rng_weights else None)
     jnp_fn = lambda q, w: jsp_Rotation.from_quat(q).mean(w).as_quat()
     np_fn = lambda q, w: osp_Rotation.from_quat(q).mean(w).as_quat().astype(dtype)  # HACK
-    tol = 5e-3 if jtu.device_under_test() == 'tpu' else 1e-4
-    self._CheckQuaternionAgainstNumpy(np_fn, jnp_fn, args_maker, tol=tol)
-    self._CompileAndCheck(jnp_fn, args_maker, tol=tol)
+    self._CheckQuaternionAgainstNumpy(np_fn, jnp_fn, args_maker, tol=1e-4)
+    self._CompileAndCheck(jnp_fn, args_maker, tol=1e-4)
 
   @jtu.sample_product(
     dtype=float_dtypes,
