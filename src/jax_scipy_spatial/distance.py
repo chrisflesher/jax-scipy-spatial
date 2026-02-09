@@ -15,8 +15,6 @@
 import functools
 import typing
 
-import scipy.spatial.distance
-
 import jax
 import jax.numpy as jnp
 

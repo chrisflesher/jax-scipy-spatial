@@ -23,7 +23,6 @@ classifiers = [
 dependencies = [
     "jax",
     "jaxlib",
-    "scipy",
 ]
 
 [project.urls]
@@ -35,6 +34,7 @@ dependencies = [
 dev = [
     "absl-py",
     "pytest",
+    "scipy",
     "tox",
 ]
 

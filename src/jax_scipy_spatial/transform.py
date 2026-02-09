@@ -17,8 +17,6 @@ import functools
 import re
 import typing
 
-import scipy.spatial.transform
-
 import jax
 import jax.numpy as jnp
 
@@ -52,12 +50,6 @@ class Rotation:
       return cls.from_matrix(matrix), rssd, sensitivity
     else:
       return cls.from_matrix(matrix), rssd
-
-  @classmethod
-  def create_group(cls, group: str, axis: str = 'Z', dtype=float):
-    """Create a 3D rotation group."""
-    quat = scipy.spatial.transform.Rotation.create_group(group, axis).as_quat()
-    return cls.from_quat(jnp.array(quat, dtype=dtype))
 
   @classmethod
   def concatenate(cls, rotations: typing.Sequence):
