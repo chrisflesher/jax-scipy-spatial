@@ -37,6 +37,7 @@ dev = [
     "pytest",
     "scipy",
     "tox",
+    "twine",
 ]
 
 [build-system]
