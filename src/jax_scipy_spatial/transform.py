@@ -17,17 +17,10 @@ import functools
 import re
 import typing
 
-import scipy.spatial.transform
-
 import jax
 import jax.numpy as jnp
-try:
-  from jax._src.numpy.util import implements
-except ImportError:
-  from jax._src.numpy.util import _wraps as implements  # for jax < 0.4.25
 
 
-@implements(scipy.spatial.transform.Rotation)
 class Rotation:
   """Rotation in 3 dimensions."""
 
@@ -59,12 +52,6 @@ class Rotation:
       return cls.from_matrix(matrix), rssd
 
   @classmethod
-  def create_group(cls, group: str, axis: str = 'Z', dtype=float):
-    """Create a 3D rotation group."""
-    quat = scipy.spatial.transform.Rotation.create_group(group, axis).as_quat()
-    return cls.from_quat(jnp.array(quat, dtype=dtype))
-
-  @classmethod
   def concatenate(cls, rotations: typing.Sequence):
     """Concatenate a sequence of `Rotation` objects."""
     return cls(jnp.concatenate([rotation._quat for rotation in rotations]))
@@ -82,7 +69,10 @@ class Rotation:
     if any(seq[i] == seq[i+1] for i in range(num_axes - 1)):
       raise ValueError(f"Expected consecutive axes to be different, got {seq}")
     axes = jnp.array([_elementary_basis_index(x) for x in seq.lower()])
-    quat = _elementary_quat_compose(angles.reshape(-1, axes.size), axes, intrinsic, degrees)
+    angles = jnp.atleast_2d(angles)
+    if angles.shape[1] != num_axes:
+      raise ValueError(f"Expected last dimension of `angles` to match number of sequence axes specified, got {angles.shape[1]}.")
+    quat = _elementary_quat_compose(angles, axes, intrinsic, degrees)
     return cls(quat)
 
   @classmethod
@@ -178,7 +168,8 @@ class Rotation:
 
   def mean(self, weights: typing.Optional[jax.Array] = None):
     """Get the mean of the rotations."""
-    weights = jnp.where(weights is None, jnp.ones(self._quat.shape[0], dtype=self._quat.dtype), jnp.asarray(weights, dtype=self._quat.dtype))
+    if weights is None:
+      weights = jnp.ones(self._quat.shape[0], dtype=self._quat.dtype)
     if weights.ndim != 1:
       raise ValueError(f"Expected `weights` to be 1 dimensional, got shape {weights.shape}.")
     if weights.shape[0] != len(self):
@@ -217,7 +208,6 @@ jax.tree_util.register_pytree_node(
 )
 
 
-@implements(scipy.spatial.transform.Slerp)
 class Slerp:
   """Spherical Linear Interpolation of Rotations."""
 
