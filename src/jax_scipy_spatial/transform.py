@@ -77,7 +77,10 @@ class Rotation:
     if any(seq[i] == seq[i+1] for i in range(num_axes - 1)):
       raise ValueError(f"Expected consecutive axes to be different, got {seq}")
     axes = jnp.array([_elementary_basis_index(x) for x in seq.lower()])
-    quat = _elementary_quat_compose(angles.reshape(-1, axes.size), axes, intrinsic, degrees)
+    angles = jnp.atleast_2d(angles)
+    if angles.shape[1] != num_axes:
+      raise ValueError(f"Expected last dimension of `angles` to match number of sequence axes specified, got {angles.shape[1]}.")
+    quat = _elementary_quat_compose(angles, axes, intrinsic, degrees)
     return cls(quat)
 
   @classmethod

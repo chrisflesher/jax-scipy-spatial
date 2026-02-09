@@ -33,6 +33,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "absl-py",
+    "pytest",
     "tox",
 ]
 

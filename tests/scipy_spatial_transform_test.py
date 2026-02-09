@@ -209,7 +209,7 @@ class LaxBackedScipySpatialTransformTests(jtu.JaxTestCase):
   def testRotationFromSingleEuler(self, size, dtype, seq, degrees):
     assert len(seq) == 1
     rng = jtu.rand_default(self.rng())
-    shape = (size,)
+    shape = (size, 1)
     args_maker = lambda: (rng(shape, dtype),)
     jnp_fn = lambda a: jsp_Rotation.from_euler(seq, a, degrees).as_quat()
     np_fn = lambda a: osp_Rotation.from_euler(seq, a, degrees).as_quat().astype(dtype)  # HACK
